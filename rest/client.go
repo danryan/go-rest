@@ -111,7 +111,7 @@ func (c *Client) Do(req *http.Request, output interface{}) (*http.Response, erro
 
 	defer res.Body.Close()
 
-	fmt.Printf("%v %v - %v\n", req.Method, req.URL, res.StatusCode) // TODO: remove this
+	// fmt.Printf("%v %v - %v\n", req.Method, req.URL, res.StatusCode) // TODO: remove this
 
 	if isHTTPError(res.StatusCode) {
 		err = &HTTPError{Response: res}

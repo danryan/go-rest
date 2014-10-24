@@ -14,28 +14,29 @@ import "github.com/danryan/go-rest/rest"
 
 // Client is an API client
 type Client struct {
-  client    *rest.Client
+  client *rest.Client
 }
 
 type githubUser struct {
   Login string `json:"login"`
-  Name string `json:"name"`
+  Name  string `json:"name"`
 }
 
 func main() {
-  c := rest.New("https://api.github.com")
+  c, _ := rest.New("https://api.github.com", nil)
   c.Header.Set("Content-Type", "application/json")
   c.Header.Set("Accept", "application/json")
 
   user := &githubUser{}
 
-  res, err := c.Get("users/danryan", user)
+  _, err := c.Get("users/danryan", user)
   if err != nil {
     panic(err)
   }
 
-  fmt.Printf("%s's name is %s\n", u.Login, u.Name)
+  fmt.Printf("%s's name is %s\n", user.Login, user.Name)
 }
+
 ```
 
 ## Resources
