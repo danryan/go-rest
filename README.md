@@ -12,11 +12,6 @@ package main
 import "fmt"
 import "github.com/danryan/go-rest/rest"
 
-// Client is an API client
-type Client struct {
-  client *rest.Client
-}
-
 type githubUser struct {
   Login string `json:"login"`
   Name  string `json:"name"`
