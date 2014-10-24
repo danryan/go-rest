@@ -36,7 +36,7 @@ func main() {
 
 ## Resources
 
-* [API documentation](http://godoc.org/github.com/danryan/go-rest)
+* [API documentation](http://godoc.org/github.com/danryan/go-rest/rest)
 * [Bugs, questions, and feature requests](https://github.com/danryan/go-rest/issues)
 
 ## Is it any good?
