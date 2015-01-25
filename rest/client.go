@@ -2,16 +2,11 @@ package rest
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
-
-	"github.com/google/go-querystring/query"
 )
 
 // Client type
@@ -20,6 +15,9 @@ type Client struct {
 	Endpoint   *url.URL
 	Header     http.Header
 	Query      url.Values
+
+	EncoderFunc EncoderFunc
+	DecoderFunc DecoderFunc
 }
 
 // New returns a Client with a configured endpoint and http.Client
@@ -42,30 +40,12 @@ func NewFromURL(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
-}
-
-// AddOptions adds the parameters in opt as URL query parameters to s.
-// opt must be a struct whose fields may contain "url" tags.
-func AddOptions(s string, opt interface{}) (string, error) {
-	v := reflect.ValueOf(opt)
-	if v.Kind() == reflect.Ptr && v.IsNil() {
-		return s, nil
+	return &Client{
+		HTTPClient: client,
+		Endpoint:   endpoint,
+		Header:     make(http.Header),
+		Query:      endpoint.Query(),
 	}
-
-	u, err := url.Parse(s)
-	if err != nil {
-		return s, err
-	}
-
-	qs, err := query.Values(opt)
-	if err != nil {
-		return s, err
-	}
-
-	u.RawQuery = qs.Encode()
-
-	return u.String(), nil
 }
 
 // NewRequest returns a new http.Request object
@@ -78,8 +58,9 @@ func (c *Client) NewRequest(meth string, path string, input interface{}) (*http.
 	u := c.Endpoint.ResolveReference(ref)
 
 	buf := new(bytes.Buffer)
+
 	if input != nil {
-		if err := json.NewEncoder(buf).Encode(input); err != nil {
+		if err := c.Encode(input, buf); err != nil {
 			return nil, err
 		}
 	}
@@ -89,16 +70,11 @@ func (c *Client) NewRequest(meth string, path string, input interface{}) (*http.
 		return nil, err
 	}
 
-	req.Header = c.Header
+	for k := range c.Header {
+		req.Header.Set(k, c.Header.Get(k))
+	}
 
 	return req, nil
-}
-
-// BasicAuth takes a username and password string and returns a base64-encoded string
-func BasicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
-	// return base64.URLEncoding.EncodeToString([]byte(auth))
 }
 
 // Do performs the request.
@@ -122,7 +98,7 @@ func (c *Client) Do(req *http.Request, output interface{}) (*http.Response, erro
 		if w, ok := output.(io.Writer); ok {
 			io.Copy(w, res.Body)
 		} else {
-			err = json.NewDecoder(res.Body).Decode(output)
+			err = c.Decode(output, res.Body)
 		}
 	}
 
